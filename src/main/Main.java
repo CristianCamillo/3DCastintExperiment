@@ -28,7 +28,7 @@ public class Main
 	
 	private float[] depthBuffer;
 	
-	private Triangle[] tris = new Triangle[]
+	private Triangle[] tris = new Triangle[] // points are in clockwise order
 	{
 		new Triangle(new Vector3f(-3, 0, 10), new Vector3f(0, 4, 10), new Vector3f(3, 0, 10)),
 		new Triangle(new Vector3f(-3, 0, 10), new Vector3f(3, 0, 10), new Vector3f(0, -4, 10)),
