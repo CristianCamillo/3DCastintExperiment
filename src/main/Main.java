@@ -102,7 +102,7 @@ public class Main
 					xPos = - halfWidth;
 					for(int x = 0; x < getWidth(); x++)
 					{						
-						Vector3f pixelPos = new Vector3f(xPos, yPos, cameraPos.z + gridDist);	// TODO: account for camera pos					
+						Vector3f pixelPos = new Vector3f(xPos, yPos, cameraPos.z + gridDist);	// TODO: account for camera pos	and rot				
 						Vector3f cameraRay = pixelPos.sub(cameraPos); // ray starting from the camera position and directed towards the pixel
 						
 						for(int i = 0; i < tris.length; i++)
