@@ -14,7 +14,7 @@ public class Main
 {
 	private int width = 800;
 	private int height = 600;
-	private String title = "[CRI] Ray Casting";
+	private String title = "Ray Casting";
 	private int FPSCap = 0;
 	private boolean showFPS = true;
 	private boolean fullscreen = false;
