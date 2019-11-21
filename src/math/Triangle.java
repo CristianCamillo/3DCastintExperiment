@@ -11,19 +11,5 @@ public class Triangle
 		this.a = a;
 		this.b = b;
 		this.c = c;
-	}	
-
-	public void orderByHeight()
-	{
-		if(b.y < c.y)
-			c = getItself(b, b = c);
-		
-		if(a.y < c.y)
-			c = getItself(a, a = c);
-		
-		if(a.y < b.y)
-			b = getItself(a, a = b);
 	}
-	
-	private Vector3f getItself(Vector3f itself, Vector3f dummy) { return itself; }
 }
