@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import engine.SimpleEngine;
+import graphics.Camera;
 import math.MathUtils;
 import math.Triangle;
 import math.Vector3f;
@@ -20,13 +21,14 @@ public class Main
 	private boolean fullscreen = false;
 	
 	///////////////////////////////////////////////////////
+		
+	private Camera camera;
 	
-	private Vector3f cameraPos;
-	private Vector3f cameraDir;
+	private float pixelWidth;
+	private float pixelHeight;
 	private float gridDist;
-	private float FOV;
 	
-	private float[] depthBuffer;
+	private float[] depthBuffer;	
 	
 	private Triangle[] tris = new Triangle[] // points are in clockwise order
 	{
@@ -44,18 +46,9 @@ public class Main
 	
 	public Main()
 	{
-		cameraPos = new Vector3f(0, 0, 0);
-		cameraDir = new Vector3f(0, 0, 1).normalize();
-		gridDist = 1;
-		FOV = 90;
+		camera = new Camera(new Vector3f(0, 0, 0), 0f, 0f, 90f);
 		
-		float ipot = (float)(gridDist / Math.cos(Math.toRadians(FOV) / 2));
-		float gridWidth = (float)Math.sqrt(ipot * ipot - gridDist * gridDist);
-		
-		/*float ipot = (float)(gridWidth / 2 / Math.cos((Math.PI - Math.toRadians(FOV)) / 2));
-		float gridDist = (float)Math.sqrt(ipo * ipo - gridWidth * gridWidth / 4);*/
-		
-		ArrayList<Vector3f> triNormals = new ArrayList<Vector3f>();		
+		ArrayList<Vector3f> triNormals = new ArrayList<Vector3f>();
 		
 		SimpleEngine se = new SimpleEngine(width, height, title, FPSCap, showFPS, fullscreen)
 		{
@@ -68,12 +61,59 @@ public class Main
 				{
 					setSize(width, height, !isFullscreen());
 					depthBuffer = new float[getWidth() * getHeight()];
+					
+					pixelWidth = 2f / getWidth();
+					pixelHeight = 2f / getHeight();
 				}
 				
+				
+				float elapsedTime = getElapsedTime();
+				
+				
+				float offsetX = 0f;
+				float offsetY = 0f;
+				float offsetZ = 0f;
+				
 				if(key(KeyEvent.VK_W))
-					cameraPos.z += getElapsedTime();
+					offsetZ = - elapsedTime;
 				if(key(KeyEvent.VK_S))
-					cameraPos.z -= getElapsedTime();
+					offsetZ = elapsedTime;
+				
+				if(key(KeyEvent.VK_A))
+					offsetX = elapsedTime;
+				if(key(KeyEvent.VK_D))
+					offsetX = - elapsedTime;
+				
+				if(key(KeyEvent.VK_E))
+					offsetY = - elapsedTime;
+				if(key(KeyEvent.VK_X))
+					offsetY = elapsedTime;
+				
+				camera.movePosition(offsetX, offsetY, offsetZ);
+								
+				
+				float deltaPitch = 0f;
+				float deltaYaw = 0f;
+				
+				if(key(KeyEvent.VK_UP))
+					deltaPitch = elapsedTime;
+				if(key(KeyEvent.VK_DOWN))
+					deltaPitch = - elapsedTime;
+				
+				if(key(KeyEvent.VK_LEFT))
+					deltaYaw = - elapsedTime;
+				if(key(KeyEvent.VK_RIGHT))
+					deltaYaw = elapsedTime;
+				
+				camera.moveRotation(deltaPitch * 50, deltaYaw * 50);
+				
+				
+				if(key(KeyEvent.VK_F))
+					camera.setFOV(camera.getFOV() + elapsedTime * 100);
+				if(key(KeyEvent.VK_G))
+					camera.setFOV(camera.getFOV() - elapsedTime * 100);
+
+				gridDist = (float)Math.tan((Math.PI - Math.toRadians(camera.getFOV())) / 2);
 			}
 			
 			public void render()
@@ -88,33 +128,35 @@ public class Main
 					Vector3f line2 = tri.c.sub(tri.a);
 					triNormals.add(line1.cross(line2).normalize());
 				}
+					
+				float xYaw   = (float)Math.sin(Math.toRadians(camera.getYaw()));
 				
-				float pixelDim = gridWidth / getWidth();
+				float yPitch = (float)Math.sin(Math.toRadians(camera.getPitch()));
 				
-				float halfWidth = gridWidth / 2;
-				float halfHeight = halfWidth * getHeight() / getWidth();
+				float zPitch = (float)Math.cos(Math.toRadians(camera.getPitch()));
+				float zYaw   = (float)Math.cos(Math.toRadians(camera.getYaw()));
 				
 				float xPos;
-				float yPos = - halfHeight;
+				float yPos = 1f - pixelHeight / 2f;			
+				float zPos = gridDist * zPitch * zYaw;
 				
 				for(int y = 0; y < getHeight(); y++)
 				{					
-					xPos = - halfWidth;
+					xPos = -1f + pixelWidth / 2f;
+					
 					for(int x = 0; x < getWidth(); x++)
-					{						
-						Vector3f pixelPos = new Vector3f(xPos, yPos, cameraPos.z + gridDist);	// TODO: account for camera pos	and rot				
-						Vector3f cameraRay = pixelPos.sub(cameraPos); // ray starting from the camera position and directed towards the pixel
+					{												
+						Vector3f pixelPos = new Vector3f(xPos + xYaw * gridDist, yPos + yPitch * gridDist, zPos);					
+						Vector3f cameraRay = pixelPos.sub(camera.position); // ray starting from the camera position and directed towards the pixel
 						
 						for(int i = 0; i < tris.length; i++)
 						{	
 							Vector3f triNorm = triNormals.get(i);
 							if(triNorm.dot(cameraRay) < 0f) // skips triangles not facing the camera
 							{
-								float[] t = new float[1];
-								Vector3f p = MathUtils.interPlane(tris[i].a, triNorm, cameraPos, cameraRay, t);
+								Vector3f p = MathUtils.interPlane(tris[i].a, triNorm, camera.position, cameraRay.mul(10000f));
 								
-								float pCamera = p.sub(cameraPos).lenght();
-								
+								float pCamera = p.sub(camera.position).lenght();
 								if(pCamera < cameraRay.lenght()) // skip points between the camera and the grid
 									continue;
 								
@@ -122,35 +164,42 @@ public class Main
 								Vector3f b = tris[i].b;
 								Vector3f c = tris[i].c;
 								
-								Vector3f pc = p.sub(c);
+								Vector3f u = b.sub(a);
+								Vector3f v = c.sub(a);
+								Vector3f w = p.sub(a);
 								
-								float area  = a.sub(b).cross(a.sub(c)).lenght() / 2;
-								float alpha = p.sub(b).cross(pc).lenght() / (2 * area);
-								float beta  = pc.cross(p.sub(a)).lenght() / (2 * area);
-								float gamma = 1 - alpha - beta;
+								float uu = u.dot(u);
+								float vv = v.dot(v);
+								float uv = u.dot(v);
+								float wu = w.dot(u);
+								float wv = w.dot(v);
 								
-								//if(alpha + beta + gamma == 1)
-								if(0 <= alpha && alpha <= 1 && 0 <= beta && beta <= 1 && 0 <= gamma && gamma <= 1)
-								{									
+								float s = (uv * wv - vv * wu) / (uv * uv - uu * vv);
+								float t = (uv * wu - uu * wv) / (uv * uv - uu * vv);
+								
+								if(s >= 0 && t >= 0 && s + t <= 1)
 									if(pCamera < depthBuffer[x + y * getWidth()])
 									{
 										Color color = colors[i];
 										depthBuffer[x + y * getWidth()] = pCamera;										
 										getFrameBuffer().drawPixel(x, y, (byte)color.getRed(), (byte)color.getGreen(), (byte)color.getBlue());
 									}
-								}
 							}
 						}
 						
-						xPos += pixelDim;
+						xPos += pixelWidth;
 					}
 					
-					yPos += pixelDim;
+					yPos -= pixelHeight;
 				}
 			}
 		};
 		
 		depthBuffer = new float[se.getWidth() * se.getHeight()];
+		
+		pixelWidth = 2f / se.getWidth();
+		pixelHeight = 2f / se.getHeight();
+		gridDist = (float)Math.tan((Math.PI - Math.toRadians(camera.getFOV())) / 2);
 		
 		se.start();
 	}

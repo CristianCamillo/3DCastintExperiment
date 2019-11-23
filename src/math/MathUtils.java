@@ -7,14 +7,14 @@ public class MathUtils
 		return normal.dot(p) - normal.dot(planeP);
 	}
 	
-	public static Vector3f interPlane(Vector3f planeP, Vector3f planeN, Vector3f lineStart, Vector3f lineEnd, float[] t)
+	public static Vector3f interPlane(Vector3f planeP, Vector3f planeN, Vector3f lineStart, Vector3f lineEnd)
 	{
 		float planeD = - planeN.dot(planeP);
 		float ad = lineStart.dot(planeN);
 		float bd = lineEnd.dot(planeN);
-		t[0] = (- planeD - ad) / (bd - ad);
+		float t = (- planeD - ad) / (bd - ad);
 		Vector3f lineStartToEnd = lineEnd.sub(lineStart);
-		Vector3f lineToIntersect = lineStartToEnd.mul(t[0]);
+		Vector3f lineToIntersect = lineStartToEnd.mul(t);
 		
 		return lineStart.add(lineToIntersect);
 	}

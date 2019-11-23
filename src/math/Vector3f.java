@@ -49,17 +49,6 @@ public class Vector3f implements Cloneable
 		return r;
 	}
 	
-	/*public Vector3f mulMat(Matrix4f m)
-	{
-		return new Vector3f
-		(
-			x * m.m[0][0] + y * m.m[1][0] + z * m.m[2][0] + w * m.m[3][0],
-			x * m.m[0][1] + y * m.m[1][1] + z * m.m[2][1] + w * m.m[3][1],
-			x * m.m[0][2] + y * m.m[1][2] + z * m.m[2][2] + w * m.m[3][2],
-			x * m.m[0][3] + y * m.m[1][3] + z * m.m[2][3] + w * m.m[3][3]
-		);
-	}*/
-	
 	public String toString() 		  { return "(" + x + ", " + y + ", " + z + ")"; }
 	public boolean equals(Vector3f v) { return x == v.x && y == v.y && z == v.z; }
 	public Vector3f clone()			  { return new Vector3f(x, y, z); }
